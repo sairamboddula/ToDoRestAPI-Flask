@@ -27,7 +27,7 @@ class Todo(db.Model):
 	user_id = db.Column(db.Integer)
 
 def token_required(f):
-	@wraps(f)
+	@wraps(f)		
 	def decorated(*args, **kwargs):
 
 		token = None
@@ -125,6 +125,77 @@ def delete_user(current_user, public_id):
 	db.session.commit()
 
 	return jsonify({'message': 'The user has been deleted!'})
+
+@app.route("/api/v1.0/todo", methods=['GET'])
+@token_required
+def get_all_todos(current_user):
+
+	todos = Todo.query.filter_by(user_id=current_user.id).all()
+
+	todo_data = [{
+					'text': todo.text,
+					'complete': todo.complete,
+					'user_id': todo.user_id, } 
+					for todo in todos
+				]
+
+	return jsonify({'todos': todo_data})
+
+@app.route("/api/v1.0/todo/<todo_id>", methods=['GET'])
+@token_required
+def get_one_todo(current_user, todo_id):
+
+	todo_data = Todo.query.filter_by(id=todo_id).first()
+
+	if not todo_data:
+		return jsonify({'message': 'Todo not found!'})
+
+	todo = {}
+
+	todo['text'] = todo_data.text
+	todo['complete'] = todo_data.complete
+	todo['user_id'] = todo_data.user_id
+
+	return jsonify({'todo': todo})
+
+@app.route("/api/v1.0/todo", methods=['POST'])
+@token_required
+def create_todo(current_user):
+	data = request.get_json()
+
+	new_todo = Todo(text=data['text'], complete=False, user_id=current_user.id)
+
+	db.session.add(new_todo)
+	db.session.commit()
+
+	return jsonify({'message': 'Todo created!'})
+
+@app.route("/api/v1.0/todo/<todo_id>", methods=['PUT'])
+@token_required
+def complete_todo(current_user, todo_id):
+	todo_data = Todo.query.filter_by(id=todo_id).first()
+
+	if not todo_data:
+		return jsonify({'message': 'Todo not found!'})
+
+	todo_data.complete = True
+
+	db.session.commit()
+
+	return jsonify({'message': 'Todo completed!'})
+
+@app.route("/api/v1.0/todo/<todo_id>", methods=['DELETE'])
+@token_required
+def delete_todo(current_user, todo_id):
+	todo_data = Todo.query.filter_by(id=todo_id).first()
+
+	if not todo_data:
+		return jsonify({'message': 'Todo not found!'})
+
+	db.session.delete(todo_data)
+	db.session.commit()
+
+	return jsonify({'message': 'Todo deleted!'})
 
 @app.route("/api/v1.0/login")
 def login():
