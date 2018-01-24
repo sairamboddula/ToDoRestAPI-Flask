@@ -53,7 +53,7 @@ def token_required(f):
 def get_all_users(current_user):
 
 	if not current_user.admin:
-		return jsonify({'message': 'Can not perform this action'})
+		return jsonify({'message': 'Cannot perform this action'})
 
 	users = User.query.all()
 
@@ -71,6 +71,9 @@ def get_all_users(current_user):
 @token_required
 def get_one_user(current_user, public_id):
 
+	if not current_user.admin:
+		return jsonify({'message': 'Cannot perform this action'})
+
 	user = User.query.filter_by(public_id=public_id).first()
 
 	if not user:
@@ -87,6 +90,9 @@ def get_one_user(current_user, public_id):
 @app.route("/api/v1.0/user", methods=['POST'])
 @token_required
 def create_user(current_user):
+
+	if not current_user.admin:
+		return jsonify({'message': 'Cannot perform this action'})
 	data = request.get_json()
 
 	hashed_password = generate_password_hash(data['password'], method='sha256')
@@ -102,6 +108,9 @@ def create_user(current_user):
 @token_required
 def promote_user(current_user, public_id):
 
+	if not current_user.admin:
+		return jsonify({'message': 'Cannot perform this action'})
+
 	user = User.query.filter_by(public_id=public_id).first()
 
 	if not user:
@@ -115,6 +124,9 @@ def promote_user(current_user, public_id):
 @app.route("/api/v1.0/user/<public_id>", methods=['DELETE'])
 @token_required
 def delete_user(current_user, public_id):
+
+	if not current_user.admin:
+		return jsonify({'message': 'Cannot perform this action'})
 
 	user = User.query.filter_by(public_id=public_id).first()
 
@@ -145,7 +157,7 @@ def get_all_todos(current_user):
 @token_required
 def get_one_todo(current_user, todo_id):
 
-	todo_data = Todo.query.filter_by(id=todo_id).first()
+	todo_data = Todo.query.filter_by(id=todo_id, user_id=current_user.id).first()
 
 	if not todo_data:
 		return jsonify({'message': 'Todo not found!'})
@@ -173,7 +185,7 @@ def create_todo(current_user):
 @app.route("/api/v1.0/todo/<todo_id>", methods=['PUT'])
 @token_required
 def complete_todo(current_user, todo_id):
-	todo_data = Todo.query.filter_by(id=todo_id).first()
+	todo_data = Todo.query.filter_by(id=todo_id, user_id=current_user.id).first()
 
 	if not todo_data:
 		return jsonify({'message': 'Todo not found!'})
@@ -187,7 +199,7 @@ def complete_todo(current_user, todo_id):
 @app.route("/api/v1.0/todo/<todo_id>", methods=['DELETE'])
 @token_required
 def delete_todo(current_user, todo_id):
-	todo_data = Todo.query.filter_by(id=todo_id).first()
+	todo_data = Todo.query.filter_by(id=todo_id, user_id=current_user.id).first()
 
 	if not todo_data:
 		return jsonify({'message': 'Todo not found!'})
